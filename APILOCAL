@@ -1,0 +1,16 @@
+from fastapi import FastAPI
+from fastapi.responses import Response
+import os
+
+app = FastAPI()
+
+CSV_DIR = ""  # Usa ruta válida
+
+@app.get("/csv/{filename}")
+def get_csv(filename: str):
+    file_path = os.path.join(CSV_DIR, filename)
+    if os.path.exists(file_path):
+        with open(file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        return Response(content, media_type="text/csv")
+    return {"error": "Archivo no encontrado"}
