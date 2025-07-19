@@ -1,0 +1,56 @@
+  from pyspark.sql import SparkSession
+
+spark = SparkSession.builder \
+    .appName("Carga desde CSV ngrok") \
+    .getOrCreate()
+
+
+import requests
+import pandas as pd
+
+# ----------------------------------
+# Paso 1: Descargar el CSV desde ngrok
+# ----------------------------------
+url = "https://b706a251b9d0.ngrok-free.app/csv/IT.csv"
+local_temp_path = "/tmp/IT.csv"  # Ruta temporal local
+
+with open(local_temp_path, "wb") as f:
+    f.write(requests.get(url).content)
+
+# ----------------------------------
+# Paso 2: Leer CSV con delimitador correcto
+# ----------------------------------
+df_pd = pd.read_csv(local_temp_path, sep=";")
+
+# ----------------------------------
+# Paso 3: Convertir a Spark DataFrame
+# ----------------------------------
+df_spark = spark.createDataFrame(df_pd)
+
+# Verifica que tenga columnas y datos
+df_spark.printSchema()
+df_spark.show()
+
+# ----------------------------------
+# Paso 4: Limpieza (por si existía antes)
+# ----------------------------------
+spark.sql("DROP TABLE IF EXISTS tabla_tickets_delta")
+
+# ----------------------------------
+# Paso 5: Guardar como Delta en el Lakehouse
+# ----------------------------------
+df_spark.write.format("delta").mode("overwrite").save("Tables/tabla_tickets_delta")
+
+# ----------------------------------
+# Paso 6: Registrar la tabla oficialmente
+# ----------------------------------
+spark.sql("""
+    CREATE TABLE tabla_tickets_delta
+    USING DELTA
+    LOCATION 'Tables/tabla_tickets_delta'
+""")
+
+# ----------------------------------
+# Paso 7: Comprobación final
+# ----------------------------------
+spark.sql("SELECT * FROM tabla_tickets_delta").show()
