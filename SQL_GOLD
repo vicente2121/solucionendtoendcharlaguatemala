@@ -1,0 +1,104 @@
+-- =============================================
+-- LIMPIEZA DE TABLAS SI YA EXISTEN
+-- =============================================
+DROP TABLE IF EXISTS WH_Oro.dbo.D_Tipo;
+DROP TABLE IF EXISTS WH_Oro.dbo.D_Cola;
+DROP TABLE IF EXISTS WH_Oro.dbo.D_Prioridad;
+DROP TABLE IF EXISTS WH_Oro.dbo.D_EtiquetaPrimaria;
+DROP TABLE IF EXISTS WH_Oro.dbo.D_EtiquetaSecundaria;
+DROP TABLE IF EXISTS WH_Oro.dbo.D_Categoria;
+DROP TABLE IF EXISTS WH_Oro.dbo.D_Tecnica;
+DROP TABLE IF EXISTS WH_Oro.dbo.D_Estado;
+DROP TABLE IF EXISTS WH_Oro.dbo.D_Resolucion;
+DROP TABLE IF EXISTS WH_Oro.dbo.D_Pais;
+DROP TABLE IF EXISTS WH_Oro.dbo.F_Incidentes;
+-- =============================================
+-- CREAR DIMENSIONES
+-- =============================================
+
+-- DIMENSION TIPO
+CREATE TABLE WH_Oro.dbo.D_Tipo AS
+SELECT ROW_NUMBER() OVER (ORDER BY Tipo) AS ID_Tipo, Tipo
+FROM (SELECT DISTINCT Tipo FROM IT_PLATA WHERE Tipo IS NOT NULL) AS sub;
+
+-- DIMENSION COLA
+CREATE TABLE WH_Oro.dbo.D_Cola AS
+SELECT ROW_NUMBER() OVER (ORDER BY Cola) AS ID_Cola, Cola
+FROM (SELECT DISTINCT Cola FROM IT_PLATA WHERE Cola IS NOT NULL) AS sub;
+
+-- DIMENSION PRIORIDAD
+CREATE TABLE WH_Oro.dbo.D_Prioridad AS
+SELECT ROW_NUMBER() OVER (ORDER BY Prioridad) AS ID_Prioridad, Prioridad
+FROM (SELECT DISTINCT Prioridad FROM IT_PLATA WHERE Prioridad IS NOT NULL) AS sub;
+
+-- DIMENSION ETIQUETA PRIMARIA
+CREATE TABLE WH_Oro.dbo.D_EtiquetaPrimaria AS
+SELECT ROW_NUMBER() OVER (ORDER BY EtiquetaPrimaria) AS ID_EtiquetaPrimaria, EtiquetaPrimaria
+FROM (SELECT DISTINCT EtiquetaPrimaria FROM IT_PLATA WHERE EtiquetaPrimaria IS NOT NULL) AS sub;
+
+-- DIMENSION ETIQUETA SECUNDARIA
+CREATE TABLE WH_Oro.dbo.D_EtiquetaSecundaria AS
+SELECT ROW_NUMBER() OVER (ORDER BY EtiquetaSecundaria) AS ID_EtiquetaSecundaria, EtiquetaSecundaria
+FROM (SELECT DISTINCT EtiquetaSecundaria FROM IT_PLATA WHERE EtiquetaSecundaria IS NOT NULL) AS sub;
+
+-- DIMENSION CATEGORIA
+CREATE TABLE WH_Oro.dbo.D_Categoria AS
+SELECT ROW_NUMBER() OVER (ORDER BY Categoría) AS ID_Categoria, Categoría
+FROM (SELECT DISTINCT Categoría FROM IT_PLATA WHERE Categoría IS NOT NULL) AS sub;
+
+-- DIMENSION TÉCNICA
+CREATE TABLE WH_Oro.dbo.D_Tecnica AS
+SELECT ROW_NUMBER() OVER (ORDER BY Técnica) AS ID_Tecnica, Técnica
+FROM (SELECT DISTINCT Técnica FROM IT_PLATA WHERE Técnica IS NOT NULL) AS sub;
+
+-- DIMENSION ESTADO
+CREATE TABLE WH_Oro.dbo.D_Estado AS
+SELECT ROW_NUMBER() OVER (ORDER BY Estado) AS ID_Estado, Estado
+FROM (SELECT DISTINCT Estado FROM IT_PLATA WHERE Estado IS NOT NULL) AS sub;
+
+-- DIMENSION RESOLUCION
+CREATE TABLE WH_Oro.dbo.D_Resolucion AS
+SELECT ROW_NUMBER() OVER (ORDER BY Resolución) AS ID_Resolucion, Resolución
+FROM (SELECT DISTINCT Resolución FROM IT_PLATA WHERE Resolución IS NOT NULL) AS sub;
+
+-- DIMENSION PAIS
+CREATE TABLE WH_Oro.dbo.D_Pais AS
+SELECT ROW_NUMBER() OVER (ORDER BY País) AS ID_Pais, País
+FROM (SELECT DISTINCT País FROM IT_PLATA WHERE País IS NOT NULL) AS sub;
+
+-- =============================================
+-- CREAR TABLA DE HECHOS F_INCIDENTES
+-- =============================================
+CREATE TABLE WH_Oro.dbo.F_Incidentes AS
+SELECT
+    t.IDdeTicket,
+    t.Fecha,
+    t.FechadeResolución,
+    t.Asunto,
+    t.Cuerpo,
+    t.Respuesta,
+    dt.ID_Tipo,
+    dc.ID_Cola,
+    dp.ID_Prioridad,
+    dep.ID_EtiquetaPrimaria,
+    des.ID_EtiquetaSecundaria,
+    dcat.ID_Categoria,
+    dtec.ID_Tecnica,
+    de.ID_Estado,
+    dr.ID_Resolucion,
+    t.Documentación,
+    t.Adicional,
+    dpais.ID_Pais,
+    t.Latitud,
+    t.Longitud
+FROM IT_PLATA t
+LEFT JOIN WH_Oro.dbo.D_Tipo dt ON t.Tipo = dt.Tipo
+LEFT JOIN WH_Oro.dbo.D_Cola dc ON t.Cola = dc.Cola
+LEFT JOIN WH_Oro.dbo.D_Prioridad dp ON t.Prioridad = dp.Prioridad
+LEFT JOIN WH_Oro.dbo.D_EtiquetaPrimaria dep ON t.EtiquetaPrimaria = dep.EtiquetaPrimaria
+LEFT JOIN WH_Oro.dbo.D_EtiquetaSecundaria des ON t.EtiquetaSecundaria = des.EtiquetaSecundaria
+LEFT JOIN WH_Oro.dbo.D_Categoria dcat ON t.Categoría = dcat.Categoría
+LEFT JOIN WH_Oro.dbo.D_Tecnica dtec ON t.Técnica = dtec.Técnica
+LEFT JOIN WH_Oro.dbo.D_Estado de ON t.Estado = de.Estado
+LEFT JOIN WH_Oro.dbo.D_Resolucion dr ON t.Resolución = dr.Resolución
+LEFT JOIN WH_Oro.dbo.D_Pais dpais ON t.País = dpais.País;
